@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>GPT 동적 챗봇</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #chatArea { border: 1px solid #ccc; padding: 10px; max-width: 600px; height: 400px; overflow-y: auto; margin-top: 20px; }
+    .message { margin-bottom: 10px; }
+    .user { color: blue; }
+    .bot { color: green; }
+  </style>
+</head>
+<body>
+  <h1>GPT 동적 챗봇</h1>
+
+  <!-- 모델 선택 및 system 프롬프트 입력 -->
+  <div>
+    <label for="modelSelect">모델 선택: </label>
+    <select id="modelSelect">
+      <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+      <option value="gpt-4">gpt-4</option>
+      <option value="gpt-4o">gpt-4o</option>
+    </select>
+  </div>
+  <div>
+    <label for="systemPrompt">시스템 메시지: </label>
+    <input type="text" id="systemPrompt" placeholder="예: You are a helpful assistant." 
+           style="width: 400px;">
+  </div>
+  <br>
+
+  <!-- 사용자 메시지 입력 -->
+  <textarea id="userInput" rows="4" cols="50" placeholder="메시지를 입력하세요"></textarea><br>
+  <button id="sendBtn">전송</button>
+  
+  <div id="chatArea"></div>
+  
+  <script>
+    const sendBtn = document.getElementById('sendBtn');
+    const userInput = document.getElementById('userInput');
+    const chatArea = document.getElementById('chatArea');
+    const modelSelect = document.getElementById('modelSelect');
+    const systemPromptInput = document.getElementById('systemPrompt');
+
+    sendBtn.addEventListener('click', async () => {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      // 사용자의 메시지를 화면에 표시
+      const userDiv = document.createElement('div');
+      userDiv.classList.add('message', 'user');
+      userDiv.innerHTML = `<strong>사용자:</strong> ${message}`;
+      chatArea.appendChild(userDiv);
+
+      // 입력값 초기화
+      userInput.value = '';
+
+      // 선택한 모델과 system 프롬프트 읽기
+      const selectedModel = modelSelect.value;
+      const systemText = systemPromptInput.value.trim() || 
+                         "You are a helpful assistant.";
+
+      try {
+        const response = await fetch("https://us-central1-ai-metaverse-chatbot.cloudfunctions.net/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: message,
+            model: selectedModel,
+            system: systemText
+          })
+        });
+        const data = await response.json();
+        const botDiv = document.createElement('div');
+        botDiv.classList.add('message', 'bot');
+        botDiv.innerHTML = `<strong>챗봇:</strong> ${data.reply}`;
+        chatArea.appendChild(botDiv);
+      } catch (error) {
+        const errorDiv = document.createElement('div');
+        errorDiv.classList.add('message', 'bot');
+        errorDiv.innerHTML = `<strong>오류:</strong> ${error.message}`;
+        chatArea.appendChild(errorDiv);
+      }
+      
+      chatArea.scrollTop = chatArea.scrollHeight;
+    });
+  </script>
+</body>
+</html>
